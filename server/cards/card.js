@@ -1,8 +1,9 @@
-export class Card {
+module.exports = class Card {
     constructor(id, name, data) {
         this.id = id;
         this.name = name;
         this.data = data;
+        this.quantity = 1;
     }
 
     getID() {
@@ -15,5 +16,13 @@ export class Card {
 
     getData() {
         return this.data;
+    }
+
+    getAmount() {
+        return this.quantity;
+    }
+
+    setAmount(amount) {
+        this.quantity = amount;
     }
 }

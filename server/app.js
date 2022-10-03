@@ -5,7 +5,7 @@ const express = require('express');
 const app = express();
 app.use(cors());
 
-let decks = {};
+let decks = [];
 
 const users = require("./user/users")
 

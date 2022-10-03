@@ -1,59 +1,124 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
+import { useCookies } from 'react-cookie';
 
-const types = ["PLANESWALKER", "CREATURE", "ARTIFACT", "SORCERY", "ENCHANTMENT", "INSTANT", "LAND"];
+const TYPES = ["LEGENDARY CREATURE", "PLANESWALKER", "CREATURE", "ARTIFACT", "SORCERY", "ENCHANTMENT", "INSTANT", "LAND"];
 
+const ALL_COLORS = ["WHITE", "BLUE", "BLACK", "RED", "GREEN"]
 
-function Deck({decks}) {
+function MatchesColor(color_identity, colors) {
+    
+    let good = true;
+
+    Object.values(color_identity).map((col) => {
+        if(col === "R" && !colors.includes("RED")) 
+            good = false;
+        
+        else if(col === "G" && !colors.includes("GREEN")) 
+            good = false;
+
+        else if(col === "U" && !colors.includes("BLUE")) 
+            good = false;
+
+        else if(col === "W" && !colors.includes("WHITE")) 
+            good = false;
+
+        else if(col === "B" && !colors.includes("BLACK")) 
+            good = false;
+    })
+
+    return good;
+}
+
+function Library({decks}) {
 
     const { slug } = useParams();
     const history = useNavigate()
     const redirectToPage = (url) => history('/' + url)
 
-    let deck = decks.filter(x => x.id === slug)[0];
+    const [cookies, setCookie] = useCookies(["owned_precons"]);
+
+    const [cards, setCards] = useState([]);    
+    const[selectedColors, setSelectedColors] = useState(ALL_COLORS);
 
     useEffect(() => {
-        document.title = "MTG Helper | Deck";
+        document.title = "MTG Helper | Library";
         window.scrollTo({top: 0, left: 0, behavior: 'smooth'});
+
+        if(decks !== undefined) {
+
+            let temp = [];
+    
+            decks.map((deck) => {
+                if(cookies.owned_precons !== undefined && cookies.owned_precons[deck.id] > 0) {
+                    for(let i = 0; i < cookies.owned_precons[deck.id]; i++) {
+                        deck.cards.map((card) => {
+                            if(temp.filter((x => x.id === card.id)).length > 0) {
+                                temp.filter((x => x.id === card.id))[0].quantity += card.quantity;
+                            } else {
+                                temp.push(card);
+                                console.log(card);
+                            }
+                        });
+
+                        temp.push({
+                            id: deck.commander.card.id,
+                            name: deck.commander.name,
+                            data: deck.commander,
+                            quantity: 1,
+                        })
+                    }
+                }
+            })
+    
+            setCards(temp);
+        }
     }, []);
 
     let added = [];
 
     return <>
         <div className="deck-page">
-            {
+            {         
                 decks.length > 0 ? (
-                    deck !== undefined ? (
+                    cards.length > 0 ? (
                         <div className='deck-info fadein'>
                             <div className='top-title flex col'>
-                                {deck.name.split("(")[0]}
-                                <div className='sub'>
-                                    {deck.name.split("(")[1].replace(")", "")}
+                                Your Library
+                                <div className='sub flex'>
+                                    {
+                                        ALL_COLORS.map((color) => {
+                                            return <div 
+                                                className='color flex moveup hover'
+                                                onClick={() => {
+                                                    if(selectedColors.includes(color))
+                                                        setSelectedColors(selectedColors.filter((x => x !== color)))
+                                                    else {
+                                                        selectedColors.push(color);
+                                                        setSelectedColors([...selectedColors])
+                                                    }
+                                                }}
+                                                id={selectedColors.includes(color) ? "" : "not-selected"}
+                                            >
+                                                {color}
+                                            </div>
+                                        })
+                                    }
                                 </div>
                             </div>
     
                             <div className='card-list flex col'>
-                                <div className='card flex col hover' onClick={() => window.open("https://scryfall.com/card/" + deck.commander.card.scryfall_id)}>
-                                    <div className='title'><u>Commander</u></div>
-                                    <img 
-                                        className='commander' 
-                                        src={`https://assets.moxfield.net/cards/card-${deck.commander.card.id}-normal.webp`} 
-                                        alt="Commander Card"
-                                    />
-                                </div>
-                                
                                 {
-                                    types.map((type) => {
+                                    TYPES.map((type) => {
                                         return <div className='category flex col'>
                                             <div className='title'><u>{type}</u></div>
 
                                             <div className='others flex'>
                                                 {
-                                                    
+                                                    cards.length > 0 ? (cards.filter((x => String(x.data.card.type_line).toUpperCase().includes(type) && !added.includes(x.id))).length > 0 ?
+                                                        cards.filter((x => String(x.data.card.type_line).toUpperCase().includes(type) && !added.includes(x.id) && MatchesColor(x.data.card.color_identity, selectedColors))).sort((a, b) => a.data.card.cmc > b.data.card.cmc ? 1 : -1).map((card) => {
 
-                                                    deck !== undefined ? (Object.values(deck.cards).filter((x => String(x.data.card.type_line).toUpperCase().includes(type) && !added.includes(x.name))).length > 0 ?
-                                                        Object.values(deck.cards).filter((x => String(x.data.card.type_line).toUpperCase().includes(type) && !added.includes(x.name))).sort((a, b) => a.data.card.cmc > b.data.card.cmc ? 1 : -1).map((card) => {
-                                                            added.push(card.name);
+                                                            added.push(card.id);
 
                                                             return <div className='card flex col hover' onClick={() => window.open("https://scryfall.com/card/" + card.data.card.scryfall_id)}>
                                                                 <img 
@@ -83,7 +148,7 @@ function Deck({decks}) {
                         :
     
                         <div className='not-found flex col'>
-                            <div>Error 404: This deck can't be found...</div>
+                            <div>No precons selected! Please go select cards!</div>
                             <div className='back hover' onClick={() => redirectToPage("")}>Return Home</div>
                         </div>
                 ) :
@@ -94,6 +159,16 @@ function Deck({decks}) {
 
         <style jsx>
             {`
+                .color {
+                    width: 100px;
+                    height: 50px;
+                    background: green;
+                }
+
+                #not-selected{
+                    background: red;
+                }
+
 
                 .top-title {
                     gap: 5px;
@@ -137,6 +212,7 @@ function Deck({decks}) {
                     gap: 25px;
                     font-family: Montserrat-Regular;
                     color: gray;
+                    margin-top: 50px;
                 }
 
                 .back {
@@ -151,6 +227,7 @@ function Deck({decks}) {
 
                 .sub, .none {
                     font-family: Montserrat-Regular;
+                    gap: 15px;
                 }
 
                 .category {
@@ -180,4 +257,4 @@ function Deck({decks}) {
     </>
 }
 
-export default Deck;
+export default Library;

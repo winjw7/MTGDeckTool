@@ -6,6 +6,9 @@ import Decks from './pages/Decks';
 import Deck from './pages/Deck';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
+import SelectPrecons from './pages/SelectPrecons';
+import Library from './pages/Library';
+import AddOthers from './pages/AddOthers';
 
 const axios = require("axios");
 
@@ -17,7 +20,7 @@ function App() {
     axios.get("http://192.168.2.33:9000/precons").then(async (data) => {
         if(data === undefined)
           return;
-        
+
         setDecks(data.data);
     })
   }, [])
@@ -34,8 +37,11 @@ function App() {
           <div className='content'>
             <Routes>
               <Route exact path="/" element={<Home/>}/>
+              <Route exact path="/addothers" element={<AddOthers/>}/>
               <Route exact path="/precons" element={<Decks decks={decks}/>}/>
               <Route exact path="/deck/:slug" element={<Deck decks={decks}/>}/>
+              <Route exact path="/build" element={<SelectPrecons decks={decks}/>}/>
+              <Route exact path="/library" element={<Library decks={decks}/>}/>
             </Routes>
           </div>
          

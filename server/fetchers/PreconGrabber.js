@@ -1,4 +1,6 @@
 const axios = require("axios");
+const Card = require("../cards/card");
+const Library = require("../cards/library");
 
 const FORMAT = "commanderPrecons";
 const PAGE_SIZE = 100;
@@ -22,13 +24,26 @@ module.exports = {
                     let id = deck.publicId;
                     let name = deck.name;
 
+                    let lib = new Library();
+
                     await axios.get(`https://api2.moxfield.com/v2/decks/all/${id}`).then(async (deck_data_raw) => {
                         let deck_data = deck_data_raw.data;
+
+                        Object.keys(deck_data.mainboard).map((card) => {
+                            
+                            let card_info = deck_data.mainboard[card];
+
+                            let c = new Card(card_info.card.id, card_info.card.name, card_info);
+                            c.setAmount(card_info.quantity)
+
+                            lib.AddCard(c);
+                        })
 
                         precon_List.push({
                             id: id,
                             name: name,
-                            data: deck_data
+                            commander: Object.values(deck_data.commanders)[0],
+                            cards: lib.GetCards()
                         });
                     })
                 });

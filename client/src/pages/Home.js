@@ -14,14 +14,26 @@ function Home() {
                 </div>
             </div>
 
-            <div className='options flex'>
+            <div className='options flex col'>
                 <div className='button hover moveup flex' onClick={() => redirectToPage("precons")}>
                     View Precons
                 </div>
 
-                <div className='button build hover moveup flex' onClick={() => redirectToPage("build")}>
-                    Build Library
+                <div className='flex options'>
+                    <div className='button build hover moveup flex' onClick={() => redirectToPage("build")}>
+                        Select Precons
+                    </div>
+
+                    <div className='button others hover moveup flex' onClick={() => redirectToPage("add")}>
+                        Add Others
+                    </div>
+
+                    <div className='button view hover moveup flex' onClick={() => redirectToPage("library")}>
+                        View Library
+                    </div>
                 </div>
+
+              
             </div>
         </div>
 
@@ -61,6 +73,14 @@ function Home() {
 
                 .build {
                     background: var(--color2);
+                }
+
+                .view {
+                    background: var(--color3);
+                }
+
+                .others {
+                    background: var(--color4);
                 }
             `}
         </style>

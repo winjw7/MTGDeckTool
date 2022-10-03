@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
+import { useCookies } from 'react-cookie';
 
-function Decks({decks}) {
+function SelectPrecons({decks}) {
 
     const history = useNavigate()
     const redirectToPage = (url) => history('/' + url)
@@ -11,25 +12,43 @@ function Decks({decks}) {
         window.scrollTo({top: 0, left: 0, behavior: 'smooth'});
     }, []);
 
+    const [cookies, setCookie] = useCookies(["owned_precons"]);
+
     return <>
         <div className="decks-page fadein">
             <div className='title'>
-                Commander Precons
-                <div className='sub'>
-                All Decks
+                Select Precons
+                <div className='sub flex'>
+                    Left click to add / Right click to remove
                 </div>
             </div>
 
             <div className='precon-list flex center' id={decks.length > 0 ? "grid" : ""}>
                 {
-                    decks.length > 0 ? decks.map((deck) => {
+                    decks.length > 0 ? decks.sort(x => cookies.owned_precons !== undefined && cookies.owned_precons[x.id] ? -1 : 1).map((deck) => {
+
                         let info = String(deck?.name).split("(");
 
-                        return <div className='precon-deck flex col hover moveup fadein' onClick={() => redirectToPage("deck/" + deck.id)}> 
-                            <div className='name'>{info[0]}</div>
-                            <img src={`https://assets.moxfield.net/cards/card-${deck.commander.card.id}-normal.webp`} alt="Commander Card"/>
-                            <div className='set'>{info[1].replace(")", "")}</div>
-                            <div className='view'>Click to View</div>
+                        return <div 
+                                className='precon-deck flex col hover moveup fadein' 
+                                id={cookies.owned_precons !== undefined && cookies.owned_precons[deck.id] ? "selected-precon" : ""}
+                                onClick={() => {
+                                    let temp = cookies.owned_precons ? cookies.owned_precons : {};
+                                    temp[deck.id] ? temp[deck.id]++ : temp[deck.id] = 1;
+                                    setCookie("owned_precons", temp);
+                                    console.log(cookies.owned_precons)
+                                }}
+                                onContextMenu={(event) => {
+                                    event.preventDefault();
+                                    let temp = cookies.owned_precons ? cookies.owned_precons : {};
+                                    temp[deck.id] ? temp[deck.id]-- : temp[deck.id] = 0;
+                                    setCookie("owned_precons", temp);
+                                }}
+                            > 
+                                <div className='name'>{info[0]}</div>
+                                <img src={`https://assets.moxfield.net/cards/card-${deck.commander.card.id}-normal.webp`} alt="Commander Card"/>
+                                <div className='set'>{info[1].replace(")", "")}</div>
+                                <div className='view'>Amount: {cookies.owned_precons !== undefined && cookies.owned_precons[deck.id] ? cookies.owned_precons[deck.id] : 0}</div>
                         </div>
                     }): <div className='loading flex'>Loading Decks...</div>
                 }
@@ -38,6 +57,10 @@ function Decks({decks}) {
 
         <style jsx>
             {`
+
+                #selected-precon {
+                    background: var(--dark-highlight);
+                }
 
                 .loading {
                     color: gray;
@@ -106,4 +129,4 @@ function Decks({decks}) {
     </>
 }
 
-export default Decks;
+export default SelectPrecons;
